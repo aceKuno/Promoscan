@@ -139,12 +139,18 @@ async function runOCR(isManual = false) {
   const result = await captureAndAnalyze();
   state.isScanning = false;
 
+  // DEBUG — mostra cosa torna dal Worker
+  if (result && result._debug) {
+    showToast(`DEBUG: ${result._debug}`);
+  }
+
   if (!result || !result.sku) {
     if (isManual) setScanStatus('Codice non trovato. Avvicinati al cartellino e riprova.');
     else setScanStatus('In attesa... punta la fotocamera sul codice e premi "Scansiona ora".');
     return;
   }
 
+  showToast(`OCR: "${result.sku}" (conf: ${result.confidence}%)`);
   handleDetectedCode(result.sku, result.confidence, isManual);
 }
 
@@ -224,13 +230,14 @@ async function captureAndAnalyze(imageSource) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'ocr', image: base64 }),
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) return { sku: null, confidence: 0, _debug: `HTTP ${resp.status}` };
     const data = await resp.json();
-    if (!data.sku) return null;
+    if (data.error) return { sku: null, confidence: 0, _debug: `ERR ${data.error}` };
+    if (!data.sku) return { sku: null, confidence: 0, _debug: 'Gemini: sku=null' };
     const corrected = correctSkuAgainstDb(data.sku);
-    return { sku: corrected, confidence: data.confidence };
+    return { sku: corrected, confidence: data.confidence, _debug: `raw="${data.sku}" → "${corrected}"` };
   } catch (e) {
-    return null;
+    return { sku: null, confidence: 0, _debug: `EXC ${e.message}` };
   }
 }
 
