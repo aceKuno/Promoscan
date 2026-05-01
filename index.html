@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1428A0">
+  <title>PromoScan</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ═══════════════════ HOME ═══════════════════ -->
+    <section id="screen-home" class="screen active">
+      <div class="home-inner">
+        <div class="brand-logo">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="12" fill="#1428A0"/>
+            <path d="M12 24C12 17.4 17.4 12 24 12s12 5.4 12 12-5.4 12-12 12S12 30.6 12 24zm12-8c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8z" fill="white" opacity="0.3"/>
+            <path d="M21 19l7 5-7 5V19z" fill="white"/>
+          </svg>
+          <span class="brand-name">PromoScan</span>
+        </div>
+        <h1>Verifica promozioni attive</h1>
+        <p class="home-subtitle">Scansiona il codice prodotto per vedere le promozioni in corso</p>
+        <button id="btn-start-scan" class="btn-primary btn-large">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          Scansiona prodotto
+        </button>
+        <button id="btn-home-manual" class="btn-ghost">Inserimento manuale codice</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ SCAN ═══════════════════ -->
+    <section id="screen-scan" class="screen">
+      <div class="scan-header">
+        <button class="btn-back" id="btn-scan-back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <span class="screen-title">Scansione codice</span>
+      </div>
+      <div class="camera-wrapper">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="canvas-hidden" hidden></canvas>
+        <div class="scan-overlay">
+          <div class="scan-corners">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+          </div>
+          <p class="scan-guide-text">Inquadra il codice prodotto</p>
+        </div>
+        <div id="scan-badge" class="scan-badge hidden">
+          <span id="scan-badge-text"></span>
+        </div>
+      </div>
+      <div class="scan-controls">
+        <div id="scan-status" class="scan-status">Inizializzazione fotocamera...</div>
+        <button id="btn-force-scan" class="btn-primary" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          Scansiona ora
+        </button>
+        <div class="scan-alt-actions">
+          <button id="btn-upload-photo" class="btn-ghost-small">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Carica foto
+          </button>
+          <button id="btn-scan-to-manual" class="btn-ghost-small">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
+            </svg>
+            Inserimento manuale
+          </button>
+        </div>
+        <input type="file" id="file-input" accept="image/*" hidden>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ CONFIRM ═══════════════════ -->
+    <section id="screen-confirm" class="screen">
+      <div class="centered-content">
+        <div class="confidence-indicator medium">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Confidenza media — verifica il codice
+        </div>
+        <h2 class="confirm-title">Codice rilevato</h2>
+        <div class="sku-pill" id="confirm-sku-text"></div>
+        <p class="confirm-question">Il codice visualizzato è corretto?</p>
+        <button id="btn-confirm-yes" class="btn-primary">Sì, è corretto</button>
+        <button id="btn-confirm-no" class="btn-secondary">No, riscannerizza</button>
+        <button id="btn-confirm-manual" class="btn-ghost">Inserisci manualmente</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ LOW CONFIDENCE ═══════════════════ -->
+    <section id="screen-low" class="screen">
+      <div class="centered-content">
+        <div class="confidence-indicator low">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Lettura non affidabile
+        </div>
+        <h2>Difficoltà nella lettura</h2>
+        <p>Non è stato possibile leggere il codice con sufficiente affidabilità. Prova a:</p>
+        <ul class="tips-list">
+          <li>Avvicinarti al cartellino</li>
+          <li>Migliorare l'illuminazione</li>
+          <li>Tenere il telefono fermo</li>
+        </ul>
+        <p class="tip-alt">Oppure fotografa il <strong>seriale del prodotto</strong> che di solito si trova sul retro o all'interno dell'apparecchio</p>
+        <button id="btn-low-scan-serial" class="btn-primary">Fotografa il seriale</button>
+        <button id="btn-low-retry" class="btn-secondary">Riprova scansione</button>
+        <button id="btn-low-manual" class="btn-ghost">Inserisci manualmente</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ MANUAL ═══════════════════ -->
+    <section id="screen-manual" class="screen">
+      <div class="screen-header">
+        <button class="btn-back" id="btn-manual-back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <span class="screen-title">Inserimento manuale</span>
+      </div>
+      <div class="manual-content">
+        <p class="manual-hint">Inserisci il codice prodotto che trovi sul cartellino<br><span class="manual-example">Es: RB38C607AS9/EF</span></p>
+        <input
+          type="text"
+          id="manual-input"
+          class="code-input"
+          placeholder="Codice prodotto"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          maxlength="20"
+        >
+        <button id="btn-manual-search" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          Cerca promozioni
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ RESULT ═══════════════════ -->
+    <section id="screen-result" class="screen">
+      <div class="result-header">
+        <button class="btn-back" id="btn-result-back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <div class="result-sku-info">
+          <span class="result-label">Prodotto</span>
+          <span class="result-sku-code" id="result-sku-code"></span>
+        </div>
+      </div>
+      <div id="promo-list" class="promo-list"></div>
+      <div class="chat-section">
+        <div class="chat-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Hai domande su questa promozione?
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <button id="btn-mic" class="btn-mic" title="Parla">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <input type="text" id="chat-input" class="chat-input" placeholder="Scrivi o parla..." maxlength="500">
+          <button id="btn-send" class="btn-send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ NO RESULT ═══════════════════ -->
+    <section id="screen-no-result" class="screen">
+      <div class="screen-header">
+        <button class="btn-back" id="btn-noresult-back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <span class="screen-title">Nessuna promozione</span>
+      </div>
+      <div class="no-result-content">
+        <div class="no-result-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </div>
+        <h2>Nessuna promozione attiva</h2>
+        <div class="no-result-sku-pill" id="no-result-sku"></div>
+        <p>Non sono presenti promozioni attive o in arrivo per questo prodotto al momento.</p>
+        <button id="btn-noresult-new-scan" class="btn-primary">Scansiona un altro prodotto</button>
+      </div>
+      <div class="chat-section">
+        <div class="chat-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Hai domande?
+        </div>
+        <div id="chat-messages-nr" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <button id="btn-mic-nr" class="btn-mic" title="Parla">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <input type="text" id="chat-input-nr" class="chat-input" placeholder="Scrivi o parla..." maxlength="500">
+          <button id="btn-send-nr" class="btn-send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ LOADER ═══════════════════ -->
+    <div id="loader" class="loader hidden">
+      <div class="loader-inner">
+        <div class="spinner"></div>
+        <p id="loader-text">Caricamento...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js?v=4"></script>
+</body>
+</html>
