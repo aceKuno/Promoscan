@@ -6,10 +6,10 @@ const CONFIG = {
   // Es: 'https://raw.githubusercontent.com/tuonome/promoscan/main'
   GITHUB_RAW: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? '.'
-    : 'https://raw.githubusercontent.com/TUONOME/promoscan/main',
+    : 'https://raw.githubusercontent.com/aceKuno/promoscan/main',
 
-  // URL del Cloudflare Worker (inserisci dopo il deploy)
-  WORKER_URL: 'https://TUOWORKER.TUOSUBDOMINIO.workers.dev',
+  // URL del Cloudflare Worker
+  WORKER_URL: 'https://promoscan.teotramba.workers.dev',
 
   // Soglie confidenza OCR
   CONFIDENCE_HIGH: 95,
