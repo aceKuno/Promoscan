@@ -2,8 +2,8 @@
  * Cloudflare Worker — PromoScan AI proxy
  *
  * Variabili d'ambiente da impostare nel dashboard Cloudflare:
- *   ANTHROPIC_API_KEY  → la tua chiave API Anthropic
- *   GITHUB_REPO        → es. "tuonome/promoscan"
+ *   GEMINI_API_KEY  → la tua chiave API Google Gemini (gratuita su aistudio.google.com)
+ *   GITHUB_REPO     → es. "tuonome/promoscan"
  */
 
 const ALLOWED_ORIGINS = ['*']; // Restringi al tuo dominio github.io in produzione
@@ -87,33 +87,30 @@ ISTRUZIONI:
 - Non inventare dettagli su premi o requisiti non presenti nei dati
 - Per situazioni particolari con clienti, suggerisci sempre di contattare il referente aziendale se il caso non è coperto dalle istruzioni disponibili`;
 
-    // Chiamata Claude API
+    // Chiamata Google Gemini API
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+
     try {
-      const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+      const geminiResp = await fetch(geminiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 512,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: sanitizedQuestion }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: sanitizedQuestion }] }],
+          generationConfig: { maxOutputTokens: 512, temperature: 0.3 },
         }),
       });
 
-      if (!claudeResp.ok) {
-        const err = await claudeResp.text();
-        console.error('Claude API error:', err);
+      if (!geminiResp.ok) {
+        const err = await geminiResp.text();
+        console.error('Gemini API error:', err);
         return corsResponse(JSON.stringify({
           answer: 'Si è verificato un errore nel servizio AI. Riprova tra qualche istante.'
         }), 200);
       }
 
-      const claudeData = await claudeResp.json();
-      const answer = claudeData.content?.[0]?.text || 'Nessuna risposta disponibile.';
+      const geminiData = await geminiResp.json();
+      const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Nessuna risposta disponibile.';
 
       return corsResponse(JSON.stringify({ answer }), 200);
     } catch (e) {
